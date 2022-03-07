@@ -1,36 +1,18 @@
 
-name: Test for silviof/docker-languagetool
+name: Test
 
 on:
+  push:
+    branches: [ master ]
   pull_request:
+    branches: [ master ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
-
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Set environment variables
-        run: |
-          make envout >> ${GITHUB_ENV}
-
-      - name: Prepare system
-        run: |
-          make prepare
-
-      - name: Build Docker image
-        run: |
-          make build
-
-      - name: Run tests
-        run: |
-          make test
+      - run: |
+          make docker-test

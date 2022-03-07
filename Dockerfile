@@ -1,19 +1,20 @@
-FROM openjdk:16-slim-buster
+FROM openjdk:slim
 
-# see Makefile.version
-ARG VERSION
+ARG VERSION=5.6
 
-MAINTAINER Silvio Fricke <silvio.fricke@gmail.com>
+RUN apt-get update && \
+    apt-get install -y \
+        curl \
+        libarchive-tools && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y wget unzip && rm -rf /var/lib/apt/lists/*
+RUN curl --progress-bar "https://languagetool.org/download/LanguageTool-$VERSION.zip" |\
+    bsdtar -x -f -
 
-RUN wget https://www.languagetool.org/download/LanguageTool-$VERSION.zip && \
-    unzip LanguageTool-$VERSION.zip && \
-    rm LanguageTool-$VERSION.zip
+ADD misc/init.sh /init.sh
+ADD misc/ngram.sh /ngram.sh
 
 WORKDIR /LanguageTool-$VERSION
-
-ADD misc/start.sh /start.sh
-CMD [ "sh", "/start.sh" ]
+CMD [ "sh", "/init.sh" ]
 USER nobody
 EXPOSE 8010
