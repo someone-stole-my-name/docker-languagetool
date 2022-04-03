@@ -22,7 +22,7 @@ The Server is running on port 8010, this port should exposed.
 
 Or you run it in background via `-d` option.
 
-Run with no minimum rights and RAM
+Run with minimum rights and RAM limit
 
     docker run --name languagetool \
         --cap-drop=ALL \
