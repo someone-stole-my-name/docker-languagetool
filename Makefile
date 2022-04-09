@@ -55,7 +55,7 @@ trivy:
 		--exit-code 1 \
 		$(IMAGENAME):latest
 
-test: build trivy test-int
+test: build test-int
 
 test-int-start:
 	docker kill languagetool || true
