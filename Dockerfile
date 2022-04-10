@@ -11,10 +11,16 @@ RUN apt-get update && \
 RUN curl --progress-bar "https://languagetool.org/download/LanguageTool-$VERSION.zip" |\
     bsdtar -x -f -
 
-ADD misc/init.sh /init.sh
-ADD misc/ngram.sh /ngram.sh
+RUN adduser \
+  --home /LanguageTool-$VERSION \
+  --no-create-home languagetool
+
+ADD --chown=languagetool misc/init.sh /
+ADD --chown=languagetool misc/ngram.sh /
 
 WORKDIR /LanguageTool-$VERSION
-CMD [ "sh", "/init.sh" ]
-USER nobody
+HEALTHCHECK --timeout=10s --start-period=5s \
+  CMD curl --fail --data "language=en-US&text=healthcheck test" http://localhost:8010/v2/check || exit 1
+CMD [ "bash", "/init.sh" ]
+USER languagetool
 EXPOSE 8010

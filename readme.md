@@ -20,42 +20,60 @@ The Server is running on port 8010, this port should exposed.
     [...]
     docker run --rm -p 8010:8010 ghcr.io/someone-stole-my-name/docker-languagetool
 
-Or you run it in background via `-d` option.
-
-Run with minimum rights and RAM limit
-
-    docker run --name languagetool \
-        --cap-drop=ALL \
-        --user=65534:65534 \
-        --read-only \
-        --mount type=bind,src=/tmp/languagetool/tmp,dst=/tmp \
-        -p 127.0.0.1:8010:8010 \
-        --memory 412m --memory-swap 500m \
-        -e JAVAOPTIONS="-Xmx382M" \
-        ghcr.io/someone-stole-my-name/docker-languagetool:latest
-
-
 Route information can be found at https://languagetool.org/http-api/swagger-ui/#/default, an easy route to test that it's running is `/v2/languages`.
 
-## ngram support
+## Configuration
 
-To support [ngrams] you need an additional volume or directory mounted to the
-`/ngrams` directory. For that add a `-v` to the `docker run` command.
+### Java heap size
+
+You can set any Java related option using the `JAVAOPTIONS` environment variable. 
+
+    docker run --rm -it -p 8010:8010 -e JAVAOPTIONS="-Xmx382M" ghcr.io/someone-stole-my-name/docker-languagetool:latest
+
+### HTTPServerConfig
+
+Any environment variable prefixed with `LT_` is interpreted as an [HTTPServerConfig] option.
+
+    docker run --rm -it -p 8010:8010 -p 9301:9301 \
+      -e LT_prometheusMonitoring=true \
+      ghcr.io/someone-stole-my-name/docker-languagetool:latest
+    [...]
+   
+    curl -s localhost:9301 | grep -v '^\s*$\|^\s*\#'                                                                                                            (k8s-pro)
+    languagetool_check_matches_total{language="en",mode="ALL",} 1.0
+    languagetool_threadpool_queue_size{pool="lt-server-thread",} 0.0
+    [...]
+
+### n-gram dataset support
+
+To support [ngrams] you need an additional volume or directory mounted to the `/ngrams` directory.
 
     docker run ... -v /foo:/ngrams ...
 
-[ngrams]: http://wiki.languagetool.org/finding-errors-using-n-gram-data
-### Manual
+### Automatic download
 
-Download English ngrams with the commands:
+This image can take care of the initial download of any ngram supported language as well as updates. 
+Mount a directory or volume to `/ngrams` and use the `NGRAM_LANGUAGES` environment variable to pass a comma separated string with languages:
+
+    docker run ... -v /path/to/ngrams:/ngrams -e NGRAM_LANGUAGES="en,es" ...
+
+### Manual download
+
+Download and unzip any language with the commands:
 
     mkdir ngrams
     wget https://languagetool.org/download/ngram-data/ngrams-en-YYYYMMDD.zip
     (cd ngrams && unzip ../ngrams-en-YYYYMMDD.zip)
     rm -f ngrams-en-YYYYMMDD.zip
 
-### Automatically
+It is important that the directory structure ends up looking like:
 
-Mount a directory or volume to `/ngrams` and use the `NGRAM_LANGUAGES` variable to pass a comma separated string with languages:
+    ngrams/
+     en/
+      ...
+     es/
+      ...
 
-    docker run ... -v /path/to/ngrams:/ngrams -e NGRAM_LANGUAGES="en,es" ...
+
+[ngrams]: http://wiki.languagetool.org/finding-errors-using-n-gram-data
+[HTTPServerConfig]: https://languagetool.org/development/api/org/languagetool/server/HTTPServerConfig.html
